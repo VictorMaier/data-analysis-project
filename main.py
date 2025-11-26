@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import sys
 from src.cleaner import DataCleaner
+from src.statistics import DataStats
 
 # Глобальная переменная для хранения загруженного датасета
 current_df = None
@@ -53,11 +54,32 @@ def clean_data():
         print("Неверный выбор.")
 
 def show_statistics():
+    global current_df
     if current_df is None:
         print("Сначала загрузите данные!")
         return
-    print("--- Статистика ---")
-    print(current_df.describe()) 
+    
+    # Создаем объект статистики
+    stats_module = DataStats(current_df)
+    
+    print("\n--- Статистика ---")
+    print("1. Общая статистика (Среднее, Медиана, Мода, Дисперсия)")
+    print("2. Матрица корреляции")
+    print("0. Назад")
+    
+    choice = input("Выберите действие: ")
+    
+    if choice == "1":
+        print("\n[Основные показатели]")
+        # .T транспонирует таблицу (строки становятся столбцами) для удобства чтения
+        print(stats_module.get_basic_stats().T)
+    elif choice == "2":
+        print("\n[Матрица корреляции]")
+        print(stats_module.get_correlation())
+    elif choice == "0":
+        return
+    else:
+        print("Неверный выбор.")
 
 def show_plots():
     if current_df is None:
