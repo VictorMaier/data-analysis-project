@@ -3,6 +3,7 @@ import os
 import sys
 from src.cleaner import DataCleaner
 from src.statistics import DataStats
+from src.visualizer import DataVisualizer
 
 # Глобальная переменная для хранения загруженного датасета
 current_df = None
@@ -82,11 +83,55 @@ def show_statistics():
         print("Неверный выбор.")
 
 def show_plots():
+    global current_df
     if current_df is None:
         print("Сначала загрузите данные!")
         return
-    print("--- Графики ---")
-    print("Графики пока не реализованы.")
+
+    # Pandas находит все колонки с числами, как бы они ни назывались
+    numeric_cols = current_df.select_dtypes(include=['number']).columns.tolist()
+    
+    if not numeric_cols:
+        print("В этом файле нет числовых колонок для построения графиков.")
+        return
+
+    viz = DataVisualizer(current_df)
+    
+    print("\n--- Визуализация ---")
+    print(f"Доступные колонки: {', '.join(numeric_cols)}")
+    print("1. Гистограмма")
+    print("2. Box Plot (Ящик с усами)")
+    print("3. Scatter Plot (Точечный график)")
+    print("0. Назад")
+    
+    choice = input("Выберите тип графика: ")
+    
+    if choice == "1":
+        col = input("Введите название колонки из списка выше: ")
+        if col in numeric_cols:
+            viz.plot_histogram(col)
+        else:
+            print("Ошибка: такой колонки нет.")
+            
+    elif choice == "2":
+        col = input("Введите название колонки из списка выше: ")
+        if col in numeric_cols:
+            viz.plot_boxplot(col)
+        else:
+            print("Ошибка: такой колонки нет.")
+
+    elif choice == "3":
+        col_x = input("Введите колонку для оси X: ")
+        col_y = input("Введите колонку для оси Y: ")
+        if col_x in numeric_cols and col_y in numeric_cols:
+            viz.plot_scatter(col_x, col_y)
+        else:
+            print("Ошибка: неверные названия колонок.")
+            
+    elif choice == "0":
+        return
+    else:
+        print("Неверный выбор.")
 
 def run_ml():
     if current_df is None:
