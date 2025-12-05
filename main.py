@@ -4,6 +4,7 @@ import sys
 from src.cleaner import DataCleaner
 from src.statistics import DataStats
 from src.visualizer import DataVisualizer
+from src.machine_learning import DataPredictor
 
 # Глобальная переменная для хранения загруженного датасета
 current_df = None
@@ -134,11 +135,35 @@ def show_plots():
         print("Неверный выбор.")
 
 def run_ml():
+    global current_df
     if current_df is None:
         print("Сначала загрузите данные!")
         return
-    print("--- Машинное обучение ---")
-    print("ML пока не реализован.")
+
+    # Ищем только числовые колонки
+    numeric_cols = current_df.select_dtypes(include=['number']).columns.tolist()
+    if len(numeric_cols) < 2:
+        print("Для прогноза нужно минимум 2 числовые колонки.")
+        return
+
+    print("\n--- Машинное обучение (Прогноз) ---")
+    print(f"Доступные колонки: {', '.join(numeric_cols)}")
+    
+    # Спрашиваем, что предсказывать (Y)
+    target = input("Введите колонку, которую хотите предсказать (Y): ")
+    if target not in numeric_cols:
+        print("Ошибка: такой колонки нет.")
+        return
+
+    # Спрашиваем, на основе чего предсказывать (X)
+    feature = input("Введите колонку, на основе которой делать прогноз (X): ")
+    if feature not in numeric_cols:
+        print("Ошибка: такой колонки нет.")
+        return
+
+    # Запускаем
+    predictor = DataPredictor(current_df)
+    predictor.predict_one_to_one(target, feature)
 
 def main_menu():
     while True:
