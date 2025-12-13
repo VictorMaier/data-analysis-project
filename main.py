@@ -6,6 +6,10 @@ from src.statistics import DataStats
 from src.visualizer import DataVisualizer
 from src.machine_learning import DataPredictor
 
+# Настройки отображения: показывать все колонки и делать широкую строку
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', 1000)
+
 # Глобальная переменная для хранения загруженного датасета
 current_df = None
 
