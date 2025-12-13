@@ -170,30 +170,54 @@ def run_ml():
         print("Сначала загрузите данные!")
         return
 
-    # Ищем только числовые колонки
     numeric_cols = current_df.select_dtypes(include=['number']).columns.tolist()
     if len(numeric_cols) < 2:
-        print("Для прогноза нужно минимум 2 числовые колонки.")
+        print("Мало данных для прогноза.")
         return
 
-    print("\n--- Машинное обучение (Прогноз) ---")
+    print("\n--- Машинное обучение ---")
     print(f"Доступные колонки: {', '.join(numeric_cols)}")
     
-    # Спрашиваем, что предсказывать (Y)
-    target = input("Введите колонку, которую хотите предсказать (Y): ")
+    # Выбор цели
+    target = input("Что предсказываем (Y)? Введите одну колонку: ")
     if target not in numeric_cols:
         print("Ошибка: такой колонки нет.")
         return
 
-    # Спрашиваем, на основе чего предсказывать (X)
-    feature = input("Введите колонку, на основе которой делать прогноз (X): ")
-    if feature not in numeric_cols:
-        print("Ошибка: такой колонки нет.")
+    # Выбор параметров (можно несколько)
+    print("На основе чего предсказываем (X)? Введите колонки через запятую (например: Age, Pclass)")
+    features_input = input("Параметры: ")
+    # Превращаем строку "Age, Pclass" в список ['Age', 'Pclass'] и чистим пробелы
+    features = [f.strip() for f in features_input.split(",")]
+    
+    # Проверка, что все введенные колонки существуют
+    valid_features = []
+    for f in features:
+        if f in numeric_cols and f != target:
+            valid_features.append(f)
+        elif f == target:
+            print("Нельзя использовать целевую колонку для предсказания самой себя.")
+    
+    if not valid_features:
+        print("Не выбрано ни одной корректной колонки для X.")
         return
 
-    # Запускаем
+    # Выбор модели
+    print("\nВыберите модель:")
+    print("1. Линейная регрессия (для простых связей)")
+    print("2. Дерево решений (Decision Tree)")
+    print("3. Случайный лес (Random Forest - мощная модель)")
+    
+    m_choice = input("Ваш выбор: ")
+    model_type = "linear"
+    if m_choice == "2":
+        model_type = "tree"
+    elif m_choice == "3":
+        model_type = "forest"
+
+    # Запуск
     predictor = DataPredictor(current_df)
-    predictor.predict_one_to_one(target, feature)
+    predictor.predict(target, valid_features, model_type)
 
 def main_menu():
     while True:
