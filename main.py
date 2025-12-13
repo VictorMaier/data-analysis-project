@@ -124,7 +124,8 @@ def show_plots():
     print(f"Доступные колонки: {', '.join(numeric_cols)}")
     print("1. Гистограмма")
     print("2. Box Plot (Ящик с усами)")
-    print("3. Scatter Plot (Точечный график)")
+    print("3. Violin Plot (Скрипичная диаграмма)")
+    print("4. Scatter Plot (Точечный график)")
     print("0. Назад")
     
     choice = input("Выберите тип графика: ")
@@ -144,6 +145,13 @@ def show_plots():
             print("Ошибка: такой колонки нет.")
 
     elif choice == "3":
+        col = input("Введите название колонки из списка выше: ")
+        if col in numeric_cols:
+            viz.plot_violin(col)
+        else:
+            print("Ошибка: такой колонки нет.")
+    
+    elif choice == "4":
         col_x = input("Введите колонку для оси X: ")
         col_y = input("Введите колонку для оси Y: ")
         if col_x in numeric_cols and col_y in numeric_cols:
