@@ -20,9 +20,11 @@ class DataStats:
             Q3 = series.quantile(0.75)
             IQR = Q3 - Q1
 
-            # Среднее абсолютное отклонение (MAD)
-            # В новых версиях pandas удалили .mad(), считаем вручную:
-            mad = (series - series.mean()).abs().mean()
+            # Среднее абсолютное отклонение (Mean Absolute Deviation)
+            mad_mean = (series - series.mean()).abs().mean()
+            
+            # Медианное абсолютное отклонение (Median Absolute Deviation) - требование преподавателя
+            mad_median = (series - series.median()).abs().median()
 
             stats[col] = {
                 'Среднее': series.mean(),
@@ -32,7 +34,8 @@ class DataStats:
                 'Максимум': series.max(),
                 'Стд. отклонение': series.std(),
                 'Дисперсия': series.var(),
-                'MAD (Ср. абс. откл)': mad,
+                'Mean AD (Ср. абс. откл)': mad_mean,
+                'Median AD (Мед. абс. откл)': mad_median,
                 'IQR (Интерквартильный)': IQR,
                 'Skew (Асимметрия)': series.skew(),
                 'Kurtosis (Эксцесс)': series.kurt()
