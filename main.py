@@ -27,33 +27,51 @@ def load_data():
     except Exception as e:
         print(f"Ошибка при чтении файла: {e}")
 
+def show_current_data():
+    if current_df is None:
+        print("Сначала загрузите данные!")
+        return
+    print("\n--- Текущие данные ---")
+    print(current_df)
+    print(f"\nРазмер: {current_df.shape}")
+
 def clean_data():
     global current_df
     if current_df is None:
         print("Сначала загрузите данные!")
         return
 
-    print("\n--- Меню очистки данных ---")
-    print("1. Удалить дубликаты")
-    print("2. Удалить строки с пропусками (NaN)")
-    print("3. Заполнить пропуски средним значением")
-    print("0. Назад")
-    
-    choice = input("Выберите действие: ")
-    
-    # Создаем объект очистителя, передавая ему текущий датасет
-    cleaner = DataCleaner(current_df)
-    
-    if choice == "1":
-        current_df = cleaner.remove_duplicates()
-    elif choice == "2":
-        current_df = cleaner.remove_missing_values()
-    elif choice == "3":
-        current_df = cleaner.fill_missing_values()
-    elif choice == "0":
-        return
-    else:
-        print("Неверный выбор.")
+    # Интерактивный режим: не выходим, пока юзер сам не скажет
+    while True:
+        print("\n--- Меню очистки данных ---")
+        print("1. Удалить дубликаты")
+        print("2. Удалить строки с пропусками (NaN)")
+        print("3. Заполнить пропуски средним значением")
+        print("4. Исправить форматирование (текст -> числа)")
+        print("5. Удалить выбросы (метод IQR)")
+        print("6. Показать текущую таблицу")
+        print("0. Назад в главное меню")
+        
+        choice = input("Выберите действие: ")
+        
+        cleaner = DataCleaner(current_df)
+        
+        if choice == "1":
+            current_df = cleaner.remove_duplicates()
+        elif choice == "2":
+            current_df = cleaner.remove_missing_values()
+        elif choice == "3":
+            current_df = cleaner.fill_missing_values()
+        elif choice == "4":
+            current_df = cleaner.convert_to_numeric()
+        elif choice == "5":
+            current_df = cleaner.remove_outliers()
+        elif choice == "6":
+            print(current_df)
+        elif choice == "0":
+            break
+        else:
+            print("Неверный выбор.")
 
 def show_statistics():
     global current_df
@@ -173,6 +191,7 @@ def main_menu():
         print("3. Показать статистику")
         print("4. Построить графики")
         print("5. Прогнозирование")
+        print("6. Показать таблицу")
         print("0. Выход")
         
         choice = input("Выберите действие: ")
@@ -187,6 +206,8 @@ def main_menu():
             show_plots()
         elif choice == "5":
             run_ml()
+        elif choice == "6":
+            show_current_data()
         elif choice == "0":
             print("Выход...")
             break
