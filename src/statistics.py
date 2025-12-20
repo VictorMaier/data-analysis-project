@@ -27,6 +27,7 @@ class DataStats:
             mad_median = (series - series.median()).abs().median()
 
             stats[col] = {
+                'Количество': series.count(),
                 'Среднее': series.mean(),
                 'Медиана': series.median(),
                 'Мода': series.mode()[0] if not series.mode().empty else "N/A",

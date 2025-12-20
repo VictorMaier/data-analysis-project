@@ -6,15 +6,17 @@ from src.statistics import DataStats
 from src.visualizer import DataVisualizer
 from src.machine_learning import DataPredictor
 
-# Настройки отображения: показывать все колонки и делать широкую строку
+# Настройки отображения
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 1000)
 
 # Глобальная переменная для хранения загруженного датасета
 current_df = None
+# Глобальный клинер, чтобы помнить историю очистки
+current_cleaner = None
 
 def load_data():
-    global current_df
+    global current_df, current_cleaner
     path = input("Введите путь к CSV файлу (например, data.csv): ")
     # Убираем кавычки, если пользователь скопировал путь как "C:\path\to\file"
     path = path.strip('"').strip("'")
@@ -25,6 +27,8 @@ def load_data():
 
     try:
         current_df = pd.read_csv(path)
+        # Создаем клинер один раз при загрузке
+        current_cleaner = DataCleaner(current_df)
         print(f"\nУспешно загружено! Размер таблицы: {current_df.shape}")
         print("Первые 5 строк:")
         print(current_df.head())
@@ -40,37 +44,49 @@ def show_current_data():
     print(f"\nРазмер: {current_df.shape}")
 
 def clean_data():
-    global current_df
+    global current_df, current_cleaner
     if current_df is None:
         print("Сначала загрузите данные!")
         return
 
-    # Интерактивный режим: не выходим, пока юзер сам не скажет
+    # Обновляем df внутри клинера, если он менялся снаружи (на всякий случай)
+    current_cleaner.df = current_df
+
     while True:
         print("\n--- Меню очистки данных ---")
         print("1. Удалить дубликаты")
         print("2. Удалить строки с пропусками (NaN)")
         print("3. Заполнить пропуски средним значением")
         print("4. Исправить форматирование (текст -> числа)")
-        print("5. Удалить выбросы (метод IQR)")
-        print("6. Показать текущую таблицу")
+        print("5. Исправить форматирование (текст -> даты)")
+        print("6. Удалить выбросы (Z-score)")
+        print("7. Показать сводку по очистке")
+        print("8. Показать текущую таблицу")
         print("0. Назад в главное меню")
         
         choice = input("Выберите действие: ")
         
-        cleaner = DataCleaner(current_df)
-        
         if choice == "1":
-            current_df = cleaner.remove_duplicates()
+            current_df = current_cleaner.remove_duplicates()
         elif choice == "2":
-            current_df = cleaner.remove_missing_values()
+            current_df = current_cleaner.remove_missing_values()
         elif choice == "3":
-            current_df = cleaner.fill_missing_values()
+            current_df = current_cleaner.fill_missing_values()
         elif choice == "4":
-            current_df = cleaner.convert_to_numeric()
+            current_df = current_cleaner.convert_to_numeric()
         elif choice == "5":
-            current_df = cleaner.remove_outliers()
+            current_df = current_cleaner.convert_to_datetime()
         elif choice == "6":
+            try:
+                val = input("Введите порог Z-оценки (по умолчанию 3): ")
+                # Если нажали Enter, ставим 3
+                threshold = float(val) if val.strip() else 3.0
+                current_df = current_cleaner.remove_outliers(threshold)
+            except ValueError:
+                print("Ошибка: нужно ввести число.")
+        elif choice == "7":
+            current_cleaner.print_summary()
+        elif choice == "8":
             print(current_df)
         elif choice == "0":
             break
@@ -87,7 +103,7 @@ def show_statistics():
     stats_module = DataStats(current_df)
     
     print("\n--- Статистика ---")
-    print("1. Общая статистика (Среднее, Медиана, Мода, Дисперсия)")
+    print("1. Общая статистика")
     print("2. Матрица корреляции")
     print("0. Назад")
     
@@ -123,35 +139,33 @@ def show_plots():
     print("\n--- Визуализация ---")
     print(f"Доступные колонки: {', '.join(numeric_cols)}")
     print("1. Гистограмма")
-    print("2. Box Plot (Ящик с усами)")
-    print("3. Violin Plot (Скрипичная диаграмма)")
-    print("4. Scatter Plot (Точечный график)")
+    print("2. Диаграмма плотности")
+    print("3. Box Plot (Медиана/IQR)")
+    print("4. Box Plot (Среднее/Std)")
+    print("5. Violin Plot")
+    print("6. Scatter Plot")
     print("0. Назад")
     
     choice = input("Выберите тип графика: ")
     
-    if choice == "1":
+    if choice in ["1", "2", "3", "4", "5"]:
         col = input("Введите название колонки из списка выше: ")
-        if col in numeric_cols:
-            viz.plot_histogram(col)
-        else:
+        if col not in numeric_cols:
             print("Ошибка: такой колонки нет.")
-            
-    elif choice == "2":
-        col = input("Введите название колонки из списка выше: ")
-        if col in numeric_cols:
-            viz.plot_boxplot(col)
-        else:
-            print("Ошибка: такой колонки нет.")
+            return
 
-    elif choice == "3":
-        col = input("Введите название колонки из списка выше: ")
-        if col in numeric_cols:
+        if choice == "1":
+            viz.plot_histogram(col)
+        elif choice == "2":
+            viz.plot_density(col)
+        elif choice == "3":
+            viz.plot_boxplot(col)
+        elif choice == "4":
+            viz.plot_boxplot_mean_std(col)
+        elif choice == "5":
             viz.plot_violin(col)
-        else:
-            print("Ошибка: такой колонки нет.")
-    
-    elif choice == "4":
+
+    elif choice == "6":
         col_x = input("Введите колонку для оси X: ")
         col_y = input("Введите колонку для оси Y: ")
         if col_x in numeric_cols and col_y in numeric_cols:
@@ -170,27 +184,26 @@ def run_ml():
         print("Сначала загрузите данные!")
         return
 
+    # Ищем только числовые колонки
     numeric_cols = current_df.select_dtypes(include=['number']).columns.tolist()
     if len(numeric_cols) < 2:
-        print("Мало данных для прогноза.")
+        print("Для прогноза нужно минимум 2 числовые колонки.")
         return
 
-    print("\n--- Машинное обучение ---")
+    print("\n--- Машинное обучение (Прогноз) ---")
     print(f"Доступные колонки: {', '.join(numeric_cols)}")
     
-    # Выбор цели
+    # Спрашиваем, что предсказывать (Y)
     target = input("Что предсказываем (Y)? Введите одну колонку: ")
     if target not in numeric_cols:
         print("Ошибка: такой колонки нет.")
         return
 
-    # Выбор параметров (можно несколько)
+    # Спрашиваем, на основе чего предсказывать (X)
     print("На основе чего предсказываем (X)? Введите колонки через запятую (например: Age, Pclass)")
     features_input = input("Параметры: ")
-    # Превращаем строку "Age, Pclass" в список ['Age', 'Pclass'] и чистим пробелы
     features = [f.strip() for f in features_input.split(",")]
     
-    # Проверка, что все введенные колонки существуют
     valid_features = []
     for f in features:
         if f in numeric_cols and f != target:
@@ -202,11 +215,10 @@ def run_ml():
         print("Не выбрано ни одной корректной колонки для X.")
         return
 
-    # Выбор модели
     print("\nВыберите модель:")
-    print("1. Линейная регрессия (для простых связей)")
-    print("2. Дерево решений (Decision Tree)")
-    print("3. Случайный лес (Random Forest - мощная модель)")
+    print("1. Линейная регрессия")
+    print("2. Дерево решений")
+    print("3. Случайный лес")
     
     m_choice = input("Ваш выбор: ")
     model_type = "linear"
@@ -215,7 +227,7 @@ def run_ml():
     elif m_choice == "3":
         model_type = "forest"
 
-    # Запуск
+    # Запускаем
     predictor = DataPredictor(current_df)
     predictor.predict(target, valid_features, model_type)
 
